@@ -134,6 +134,11 @@ typedef struct
   /* Format of this record */
   UINT16  format_version;
 
+  /* UTC timestamps milliseconds, get from Internet */
+  UINT32  utc_timestamp_ms;
+
+  /*--------------------------------------------------------------------------*/
+
   /* Current relay status, TRUE-On;FALSE-Off */
   BOOL    relay_status;
 
@@ -142,16 +147,32 @@ typedef struct
   BOOL    led_blue_status;
   BOOL    led_red_status;
 
-//  /* Wifi config */
-//  String  sta_ssid;
-//  String  sta_pwd;
-//  String  ap_ssid;
-//  String  ap_pwd;
-//
+  /*--------------------------------------------------------------------------*/
+
+  /* Internet status, TRUE-valid;FALSE-invalid */
+  BOOL    internet_status;
+
+  /* The wifi(sta) status */
+  UINT8   current_wifi_status;
+
+  /* Current SSID when esp8266 is connected */
+  CHAR    current_sta_ssid[WIFI_SSID_STR_MAX_SIZE];
+
+  /* Current IP when esp8266 is connected */
+  CHAR    current_sta_ip[16];
+
+  /*--------------------------------------------------------------------------*/
+
 //  /* Relay timing control config */
 //  boolean relay_auto;
-//
-//  /* Distance config */
+
+  /*--------------------------------------------------------------------------*/
+
+  /* Wether raw distance is valid or not */
+  BOOL    distance_valid;
+
+  /* Raw distance */
+  FLOAT   raw_distance_cm;
 
 } MY_STATUS_RECORD;
 

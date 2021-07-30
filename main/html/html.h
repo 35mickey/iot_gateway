@@ -10,10 +10,11 @@
 <tr><th>&emsp;&emsp;状态名称&emsp;&emsp;</th><th>&emsp;&emsp;当前状态&emsp;&emsp;</th></tr>\
 <tr><td>系统时间:</td><td>{{ localtime_str }}</td></tr>\
 <tr><td>Wifi状态:</td><td>{{ wifi_status }}</td></tr>\
+<tr><td>当前IP:</td><td>{{ current_ip }}</td></tr>\
 <tr><td>Internet状态:</td><td>{{ internet_status }}</td></tr>\
 <tr><td>SSID:</td><td>{{ current_ssid }}</td></tr>\
-<tr><td>看门狗:</td><td>{{ wdt_status }}</td></tr>\
-<tr><td>原始距离(cm):</td><td>{{ original_distance }}</td></tr>\
+<tr><td>看门狗(目前无效):</td><td>{{ wdt_status }}</td></tr>\
+<tr><td>原始距离(cm):</td><td>{{ raw_distance }}</td></tr>\
 </table><br><br>\
 <form action='wifi' method='get'><input type='submit' value='WIFI配置页面'></form><br>\
 <form action='control' method='get'><input type='submit' value='状态和看门狗设置'></form>\
@@ -53,8 +54,8 @@ WIFI密码: <input type='password' name=\"pwd\"><br><br>\
 看门狗: <input type='checkbox' name=\"wdt_enable\" value=\"true\" {{ wdt_check_status }}>(目前无效)<br><br>\
 <!-- input type='hidden' name='relay' value='false' --> <!-- 不能用!!! -->\
 继电器: <input type='checkbox' name=\"relay\" value=\"true\" {{ relay_check_status }}><br><br>\
-绿色灯: <input type='checkbox' name=\"led_red\" value=\"true\" {{ led_red_status }}><br><br>\
-红色灯: <input type='checkbox' name=\"led_green\" value=\"true\" {{ led_green_status }}><br><br>\
+红色灯: <input type='checkbox' name=\"led_red\" value=\"true\" {{ led_red_status }}><br><br>\
+绿色灯: <input type='checkbox' name=\"led_green\" value=\"true\" {{ led_green_status }}><br><br>\
 <input type='submit' value='提交'></form>\
 </body>\
 </html>\

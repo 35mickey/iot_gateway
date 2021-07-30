@@ -41,16 +41,18 @@ Definitions
 <tr><th>&emsp;&emsp;状态名称&emsp;&emsp;</th><th>&emsp;&emsp;当前状态&emsp;&emsp;</th></tr>\
 <tr><td>系统时间:</td><td>{{ localtime_str }}</td></tr>\
 <tr><td>Wifi状态:</td><td>{{ wifi_status }}</td></tr>\
+<tr><td>当前IP:</td><td>{{ current_ip }}</td></tr>\
 <tr><td>Internet状态:</td><td>{{ internet_status }}</td></tr>\
 <tr><td>SSID:</td><td>{{ current_ssid }}</td></tr>\
-<tr><td>看门狗:</td><td>{{ wdt_status }}</td></tr>\
-<tr><td>原始距离(cm):</td><td>{{ original_distance }}</td></tr>\
+<tr><td>看门狗(目前无效):</td><td>{{ wdt_status }}</td></tr>\
+<tr><td>原始距离(cm):</td><td>{{ raw_distance }}</td></tr>\
 </table><br><br>\
 <form action='wifi' method='get'><input type='submit' value='WIFI配置页面'></form><br>\
 <form action='control' method='get'><input type='submit' value='状态和看门狗设置'></form>\
 </body>\
 </html>\
 ")
+
 
 #define HTML_WIFI ("\
 <!DOCTYPE html>\
@@ -84,8 +86,8 @@ WIFI密码: <input type='password' name=\"pwd\"><br><br>\
 看门狗: <input type='checkbox' name=\"wdt_enable\" value=\"true\" {{ wdt_check_status }}>(目前无效)<br><br>\
 <!-- input type='hidden' name='relay' value='false' --> <!-- 不能用!!! -->\
 继电器: <input type='checkbox' name=\"relay\" value=\"true\" {{ relay_check_status }}><br><br>\
-绿色灯: <input type='checkbox' name=\"led_red\" value=\"true\" {{ led_red_status }}><br><br>\
-红色灯: <input type='checkbox' name=\"led_green\" value=\"true\" {{ led_green_status }}><br><br>\
+红色灯: <input type='checkbox' name=\"led_red\" value=\"true\" {{ led_red_status }}><br><br>\
+绿色灯: <input type='checkbox' name=\"led_green\" value=\"true\" {{ led_green_status }}><br><br>\
 <input type='submit' value='提交'></form>\
 </body>\
 </html>\
@@ -94,6 +96,30 @@ WIFI密码: <input type='password' name=\"pwd\"><br><br>\
 /*=============================================================================
 Static Variables
 =============================================================================*/
+
+/* Current Wifi status string */
+//STAT_IDLE – no connection and no activity,
+//STAT_CONNECTING – connecting in progress,
+//STAT_WRONG_PASSWORD – failed due to incorrect password,
+//STAT_NO_AP_FOUND – failed because no access point replied,
+//STAT_CONNECT_FAIL – failed due to other problems,
+//STAT_GOT_IP – connection successfu
+const static String Wifi_Stutus_String[] =
+{
+  "WIFI空闲",
+  "WIFI连接失败",
+  "WIFI连接中...",     /* Guess */
+  "WIFI已连接",
+  "WIFI密码错误",
+  "无此接入点",          /* Guess */
+  "STA模式未开启",
+//  "WIFI空闲",
+//  "WIFI连接中..",
+//  "WIFI密码错误",
+//  "无此接入点",
+//  "WIFI连接失败",
+//  "WIFI已连接",
+};
 
 /*=============================================================================
 Global Variables
@@ -114,7 +140,51 @@ Function Definitions
 
 void handle_index()
 {
-  server.send( 200, "text/html", HTML_INDEX );
+  String      response_msg;
+  WiFiClient  client;
+
+  /* Get the wifi status */
+  My_Status.current_wifi_status = WiFi.status();
+  strcpy( My_Status.current_sta_ssid, WiFi.SSID().c_str() );
+  strcpy( My_Status.current_sta_ip,   WiFi.localIP().toString().c_str() );
+
+  /* Check the Internet status */
+  if (!client.connect("www.qq.com", 80))
+  {
+    My_Status.internet_status = FALSE;
+  }
+  else
+  {
+    My_Status.internet_status = TRUE;
+    client.stop();
+  }
+
+  /* Add the status into html body */
+  response_msg += HTML_INDEX;
+  response_msg.replace("{{ wifi_status }}",   Wifi_Stutus_String[My_Status.current_wifi_status]);
+  response_msg.replace("{{ current_ssid }}",  My_Status.current_sta_ssid);
+  response_msg.replace("{{ current_ip }}",    My_Status.current_sta_ip);
+
+  if ( My_Status.internet_status == TRUE )
+  {
+    response_msg.replace("{{ internet_status }}", "已连接外网");
+  }
+  else
+  {
+    response_msg.replace("{{ internet_status }}", "连接外网失败");
+  }
+
+  if ( My_Status.distance_valid == TRUE )
+  {
+    response_msg.replace("{{ raw_distance }}",  String(My_Status.raw_distance_cm, 1) );
+  }
+  else
+  {
+    response_msg.replace("{{ raw_distance }}",  "无效");
+  }
+
+  /* Send the html body back */
+  server.send( 200, "text/html", response_msg );
 }
 
 /*===========================================================================*/
