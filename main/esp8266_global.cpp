@@ -103,6 +103,7 @@ Global Variables
 =============================================================================*/
 
 MY_CONFIG_RECORD My_Config;
+MY_STATUS_RECORD My_Status;
 
 /*=============================================================================
 Static Prototypes
@@ -435,7 +436,28 @@ Wifi_Initialise( void )
 
   LOG( DBG_A, "Connected to: %s\n", My_Config.sta_ssid );
   LOG( DBG_A, "IP address: %s\n", WiFi.localIP().toString().c_str() );
+
+  LOG( DBG_P, "Wifi Initialise Complete.\n" );
 }
 
 /*============================================================================*/
+
+void
+GPIO_Initialise( void )
+{
+  pinMode(GPIO_LED_GREEN,  OUTPUT);
+  pinMode(GPIO_LED_BLUE,  OUTPUT);
+  pinMode(GPIO_LED_RED,  OUTPUT);
+  pinMode(GPIO_RELAY,     OUTPUT);
+  pinMode(GPIO_ECHO,      OUTPUT);
+
+  pinMode(GPIO_ECHO,      INPUT);
+
+  /* Disable all GPIOs */
+  digitalWrite(GPIO_LED_GREEN,   LOW);
+  digitalWrite(GPIO_LED_BLUE,   LOW);
+  digitalWrite(GPIO_LED_RED,   LOW);
+  digitalWrite(GPIO_RELAY,      LOW);
+  digitalWrite(GPIO_ECHO,       LOW);
+}
 

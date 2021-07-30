@@ -19,7 +19,6 @@ System Includes
 Local Includes
 =============================================================================*/
 
-#include "esp8266_12f_bsp.h"
 #include "http_server.h"
 #include "esp8266_global.h"
 
@@ -53,19 +52,21 @@ void setup()
   delay(100);
 
   /*-----------------------------------------------------------------------------
-   System Initialisation
+   Power On Initialisation
   -----------------------------------------------------------------------------*/
   Serial.begin(115200);
 
   /* Init GPIOs */
-  // initialize digital pin led as an output.
-  pinMode(GPIO_LED, OUTPUT);
+  GPIO_Initialise();
 
   LOG( DBG_P, "ESP8266 Iot gateway starting, version %s\n", SW_REVISION );
 
   /*-----------------------------------------------------------------------------
-   Power On Initialisation
+   System Initialisation
   -----------------------------------------------------------------------------*/
+
+  /* Clean all the status */
+  memset( &My_Status, 0 ,sizeof(MY_STATUS_RECORD) );
 
   /* Init all local configs */
   My_Config_Initialise();
@@ -87,8 +88,8 @@ void loop() {
   if ( (millis() - led_flash_timestamp_us ) > 1000 )
   {
     led_flash_timestamp_us = millis();
-    int led_state = digitalRead(GPIO_LED);
-    digitalWrite(GPIO_LED, !led_state);
+    int led_state = digitalRead(GPIO_LED_BLUE);
+    digitalWrite(GPIO_LED_BLUE, !led_state);
   }
 
   http_handle_client();

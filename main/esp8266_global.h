@@ -18,11 +18,11 @@ Description:
 System Includes
 =============================================================================*/
 
-#include "Arduino.h"
-
 /*=============================================================================
 Local Includes
 =============================================================================*/
+
+#include "esp8266_12f_bsp.h"
 
 /*=============================================================================
 Definitions
@@ -132,7 +132,15 @@ typedef struct
 typedef struct
 {
   /* Format of this record */
-  UINT16     format_version;
+  UINT16  format_version;
+
+  /* Current relay status, TRUE-On;FALSE-Off */
+  BOOL    relay_status;
+
+  /* Current led status, TRUE-On;FALSE-Off */
+  BOOL    led_green_status;
+  BOOL    led_blue_status;
+  BOOL    led_red_status;
 
 //  /* Wifi config */
 //  String  sta_ssid;
@@ -155,6 +163,7 @@ Global References
 =============================================================================*/
 
 extern MY_CONFIG_RECORD My_Config;
+extern MY_STATUS_RECORD My_Status;
 
 /*=============================================================================
 Prototypes
@@ -177,6 +186,9 @@ My_Config_Initialise(void);
 
 extern void
 Wifi_Initialise( void );
+
+extern void
+GPIO_Initialise( void );
 
 #endif  /* __ESP8266_GLOBAL_H__ */
 

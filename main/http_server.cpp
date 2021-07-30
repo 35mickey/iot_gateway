@@ -81,14 +81,15 @@ WIFI密码: <input type='password' name=\"pwd\"><br><br>\
 <form action='control' method='get'><input type='submit' value='刷新'></form><br>\
 <form action='control' method='post'>\
 <!-- input type='hidden' name='wdt_enable' value='false' --> <!-- 此处为隐藏域，POST时会显示，不能用!!! -->\
-看门狗: <input type='checkbox' name='wdt_enable' value='true' {{ wdt_check_status }}>(重启生效)<br><br>\
+看门狗: <input type='checkbox' name=\"wdt_enable\" value=\"true\" {{ wdt_check_status }}>(目前无效)<br><br>\
 <!-- input type='hidden' name='relay' value='false' --> <!-- 不能用!!! -->\
-继电器: <input type='checkbox' name='relay' value='true'  {{ relay_check_status }}><br><br>\
+继电器: <input type='checkbox' name=\"relay\" value=\"true\" {{ relay_check_status }}><br><br>\
+绿色灯: <input type='checkbox' name=\"led_red\" value=\"true\" {{ led_red_status }}><br><br>\
+红色灯: <input type='checkbox' name=\"led_green\" value=\"true\" {{ led_green_status }}><br><br>\
 <input type='submit' value='提交'></form>\
 </body>\
 </html>\
 ")
-
 
 /*=============================================================================
 Static Variables
@@ -247,7 +248,114 @@ void handle_wifi()
 
 void handle_control()
 {
-  server.send( 200, "text/html", HTML_CONTROL );
+  String  response_msg;
+
+  String  new_relay;
+  String  new_led_green;
+  String  new_led_red;
+
+  /*---------------------------------------------------------------------------*/
+
+  switch ( server.method() )
+  {
+    /* User wants to control the relay */
+    case HTTP_POST:
+
+      new_relay     = server.arg("relay");
+      new_led_green = server.arg("led_green");
+      new_led_red   = server.arg("led_red");
+
+      LOG( DBG_I, "New relay: %s\n",      new_relay.c_str() );
+      LOG( DBG_I, "New led_green: %s\n",  new_led_green.c_str() );
+      LOG( DBG_I, "New led_red: %s\n",    new_led_red.c_str() );
+
+      /* Update the status */
+      if ( new_relay == "true" )
+      {
+        My_Status.relay_status = TRUE;
+        digitalWrite(GPIO_RELAY, HIGH);
+      }
+      else
+      {
+        My_Status.relay_status = FALSE;
+        digitalWrite(GPIO_RELAY, LOW);
+      }
+
+      if ( new_led_green == "true" )
+      {
+        My_Status.led_green_status = TRUE;
+        digitalWrite(GPIO_LED_GREEN, HIGH);
+      }
+      else
+      {
+        My_Status.led_green_status = FALSE;
+        digitalWrite(GPIO_LED_GREEN, LOW);
+      }
+
+      if ( new_led_red == "true" )
+      {
+        My_Status.led_red_status = TRUE;
+        digitalWrite(GPIO_LED_RED, HIGH);
+      }
+      else
+      {
+        My_Status.led_red_status = FALSE;
+        digitalWrite(GPIO_LED_RED, LOW);
+      }
+
+      /* Return the control html page after all,
+         So... Don't need break */
+      //break;
+
+    /*---------------------------------------------------------------------------*/
+
+    /* User wants know the status of relay */
+    case HTTP_GET:
+
+      /* Add the status into html body */
+      response_msg += HTML_CONTROL;
+      if ( My_Status.relay_status == TRUE )
+      {
+        response_msg.replace("{{ relay_check_status }}", "checked=\"true\"");
+      }
+      else
+      {
+        response_msg.replace("{{ relay_check_status }}", "");
+      }
+
+      if ( My_Status.led_green_status == TRUE )
+      {
+        response_msg.replace("{{ led_green_status }}", "checked=\"true\"");
+      }
+      else
+      {
+        response_msg.replace("{{ led_green_status }}", "");
+      }
+
+      if ( My_Status.led_red_status == TRUE )
+      {
+        response_msg.replace("{{ led_red_status }}", "checked=\"true\"");
+      }
+      else
+      {
+        response_msg.replace("{{ led_red_status }}", "");
+      }
+
+      /* Send the html body back */
+      server.send( 200, "text/html", response_msg );
+
+      break;
+
+    /*---------------------------------------------------------------------------*/
+
+    default:
+
+      response_msg += server.method();
+      server.send( 200, "text/plain", response_msg );
+
+      LOG( DBG_I, "Unknown request method: %s\n", response_msg );
+      break;
+  }
 }
 
 /*===========================================================================*/
@@ -277,8 +385,6 @@ void handleNotFound()
 */
 void http_server_init(void)
 {
-  Serial.println("");
-
   /* Register the page to handle fucntions
      Emmm...you can NOT use static for these functions */
   server.on("/", handle_index);
@@ -288,7 +394,8 @@ void http_server_init(void)
 
   /* Start server */
   server.begin();
-  Serial.println("HTTP server started");
+
+  LOG( DBG_P, "HTTP server Initialise Complete.\n" );
 }
 
 /*===========================================================================*/

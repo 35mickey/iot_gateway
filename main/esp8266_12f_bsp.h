@@ -29,10 +29,15 @@ Definitions
 =============================================================================*/
 
 /* GPIO definitions */
-#define GPIO_LED      13
-#define GPIO_RELAY    14
-#define GPIO_TRIG     5
-#define GPIO_ECHO     4
+#define GPIO_LED_GREEN  12
+#define GPIO_LED_BLUE   13
+#define GPIO_LED_RED    15
+#define GPIO_RELAY      14
+#define GPIO_TRIG       5
+#define GPIO_ECHO       4     /* It's user key on eval board */
+
+#define GPIO_HIGH     1
+#define GPIO_LOW      0
 
 /* EEPROM definitions */
 /* Each byte of the EEPROM can only hold a value from 0 to 255. */
