@@ -25,6 +25,7 @@ Local Includes
 =============================================================================*/
 
 #include "http_server.h"
+#include "esp8266_global.h"
 
 /*=============================================================================
 Definitions
@@ -167,7 +168,7 @@ void http_server_init(void)
 
   /* Start server */
   server.begin();
-  Serial.println("New HTTP server started");
+  Serial.println("HTTP server started");
 }
 
 /*===========================================================================*/
@@ -176,4 +177,3 @@ void http_handle_client(void)
 {
   server.handleClient();
 }
-

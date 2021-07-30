@@ -15,31 +15,17 @@ Description:
 System Includes
 =============================================================================*/
 
-#include <ESP8266WiFi.h>
-#include <WiFiClient.h>
-#include <ESP8266WebServer.h>
-#include <ESP8266mDNS.h>
-
 /*=============================================================================
 Local Includes
 =============================================================================*/
 
 #include "esp8266_12f_bsp.h"
 #include "http_server.h"
+#include "esp8266_global.h"
 
 /*=============================================================================
 Definitions
 =============================================================================*/
-
-#ifndef STASSID
-#define STASSID "ZXG_Tech1"
-#define STAPSK  "ZXG86968188"
-#endif
-
-#ifndef APSSID
-#define APSSID "ESPap"
-#define APPSK  "thereisnospoon"
-#endif
 
 /*=============================================================================
 Static Variables
@@ -62,48 +48,36 @@ Function Definitions
 
 /*===========================================================================*/
 
-void setup() {
+void setup()
+{
   delay(100);
-  Serial.begin(115200);
-  Serial.println();
 
+  /*-----------------------------------------------------------------------------
+   System Initialisation
+  -----------------------------------------------------------------------------*/
+  Serial.begin(115200);
+
+  /* Init GPIOs */
   // initialize digital pin led as an output.
   pinMode(GPIO_LED, OUTPUT);
 
-  /* Set wifi mode to support both AP and STA */
-  WiFi.mode(WIFI_AP_STA);
+  LOG( DBG_P, "ESP8266 Iot gateway starting, version %s\n", SW_REVISION );
 
-/*---------------------------------------------------------------------------*/
+  /*-----------------------------------------------------------------------------
+   Power On Initialisation
+  -----------------------------------------------------------------------------*/
 
-  /* Init the wifi AP function */
-  Serial.println("Configuring access point...");
-  /* You can remove the password parameter if you want the AP to be open. */
-//  WiFi.softAP(ap_ssid, ap_password);
-  WiFi.softAP(APSSID);
+  /* Init all local configs */
+  My_Config_Initialise();
 
-  IPAddress myIP = WiFi.softAPIP();
-  Serial.print("AP IP address: ");
-  Serial.println(myIP);
-
-/*---------------------------------------------------------------------------*/
-
-  /* Init the wifi STA function */
-  WiFi.begin(STASSID, STAPSK);
-  /* Wait for connection */
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
-  Serial.println("");
-  Serial.print("Connected to ");
-  Serial.println(STASSID);
-  Serial.print("IP address: ");
-  Serial.println(WiFi.localIP());
-
-/*---------------------------------------------------------------------------*/
+  /* Init wifi configs */
+  Wifi_Initialise();
 
   /* Init the HTTP server */
   http_server_init();
+
+  /*---------------------------------------------------------------------------*/
+
 }
 
 /*===========================================================================*/
