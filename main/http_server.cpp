@@ -61,10 +61,10 @@ Definitions
 <form action='/' method='get'><input type='submit' value='主页'></form><br>\
 <form action='wifi' method='get'><input type='submit' value='刷新'></form><br>\
 <form action='wifi' method='post'>\
-WIFI名称: <select name='ssid'>\
+WIFI名称: <select name=\"ssid\">\
 {{ ssid_datalist }}\
 </select><br><br>\
-WIFI密码: <input type='password' name='pwd'><br><br>\
+WIFI密码: <input type='password' name=\"pwd\"><br><br>\
 <input type='submit' value='提交'>\
 </form>\
 </body>\
@@ -120,7 +120,127 @@ void handle_index()
 
 void handle_wifi()
 {
-  server.send( 200, "text/html", HTML_WIFI );
+  String  response_msg;
+
+  String  ssid;
+  String  ssid_list;
+  int32_t rssi;
+  int32_t channel;
+  INT8    Scan_Result;
+
+  String  new_ssid;
+  String  new_psk;
+  UINT32  connect_start_timestamp_ms;
+
+  /*---------------------------------------------------------------------------*/
+
+  switch ( server.method() )
+  {
+    /* User wants the avaliable SSID list */
+    case HTTP_GET:
+
+      LOG( DBG_N, "Starting WiFi scan..." );
+
+      /* Scan wifi first */
+      Scan_Result = WiFi.scanNetworks(/*async=*/false, /*hidden=*/true);
+      if (Scan_Result == 0)
+      {
+        LOG( DBG_W, "No networks found" );
+      }
+      else if (Scan_Result > 0)
+      {
+
+        Serial.printf(PSTR("%d networks found:\n"), Scan_Result);
+
+        // Print unsorted scan results
+        for (int8_t i = 0; i < Scan_Result; i++)
+        {
+          ssid    = WiFi.SSID(i);
+          rssi    = WiFi.RSSI(i);
+          channel = WiFi.channel(i);
+#if 0
+          WiFi.getNetworkInfo(i, ssid, encryptionType, rssi, bssid, channel, hidden);
+#endif
+          Serial.printf(PSTR(" %02d: [CH %02d] %ddBm %s\n"),
+                        i,
+                        channel,
+                        rssi,
+                        ssid.c_str());
+
+          /* Ignore the empty ssid */
+          if ( ssid != "")
+          {
+            /* Using [\"] to replace ['] on important elements,
+               otherwise you may meet some unexpected troubles */
+            ssid_list += "<option value=\""+ssid+"\">"+ssid+"</option>\n";
+          }
+        }
+      }
+      else
+      {
+        LOG( DBG_E, "WiFi scan error %d", Scan_Result);
+      }
+
+      /* Add the ssid list into html body */
+      response_msg += HTML_WIFI;
+      response_msg.replace("{{ ssid_datalist }}", ssid_list);
+
+      /* Send the html body back */
+      server.send( 200, "text/html", response_msg );
+
+      break;
+
+    /*---------------------------------------------------------------------------*/
+
+    /* User wants to connect to a new SSID */
+    case HTTP_POST:
+
+      new_ssid  = server.arg("ssid");
+      new_psk   = server.arg("pwd");
+
+      LOG( DBG_I, "New ssid: %s\n", new_ssid.c_str() );
+      LOG( DBG_I, "New psk: %s\n", new_psk.c_str() );
+
+      /* Try connect the new SSID first */
+      connect_start_timestamp_ms = millis();
+      WiFi.begin( new_ssid , new_psk );
+
+      /* Wait for connection */
+      while (WiFi.status() != WL_CONNECTED)
+      {
+        delay(500);
+        Serial.print(".");
+        /* Wait for 10 sec */
+        if ( (millis() - connect_start_timestamp_ms) > 10*1000 )
+        {
+          LOG( DBG_E, "Connect to %s timeout\n", new_ssid);
+          break;
+        }
+      }
+
+      /* Save the config if connect new SSID successfully */
+      if ( WiFi.status() == WL_CONNECTED )
+      {
+        strcpy( My_Config.sta_ssid,  new_ssid.c_str() );
+        strcpy( My_Config.sta_pwd,   new_psk.c_str() );
+        My_Config_Save(&My_Config);
+      }
+
+      /* Amyway, send index html body back */
+      handle_index();
+
+      break;
+
+    /*---------------------------------------------------------------------------*/
+
+    default:
+
+      response_msg += server.method();
+      server.send( 200, "text/plain", response_msg );
+
+      LOG( DBG_I, "Unknown request method: %s\n", response_msg );
+      break;
+  }
 }
 
 /*===========================================================================*/
