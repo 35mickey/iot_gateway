@@ -35,7 +35,6 @@ Global Variables
 =============================================================================*/
 
 u32 led_flash_timestamp_ms = 0;
-u32 led_flash_timestamp_us = 0;
 
 /*=============================================================================
 Static Prototypes
@@ -85,9 +84,9 @@ void setup()
 
 void loop() {
 
-  if ( (millis() - led_flash_timestamp_us ) > 1000 )
+  if ( (millis() - led_flash_timestamp_ms ) > 1000 )
   {
-    led_flash_timestamp_us = millis();
+    led_flash_timestamp_ms = millis();
     int led_state = digitalRead(GPIO_LED_BLUE);
     digitalWrite(GPIO_LED_BLUE, !led_state);
   }

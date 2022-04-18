@@ -32,8 +32,8 @@ Definitions
 =============================================================================*/
 
 #ifndef STASSID
-#define STASSID "ZXG_Tech1"
-#define STAPSK  "ZXG86968188"
+#define STASSID "ZXG"
+#define STAPSK  "86968188"
 #endif
 
 #ifndef APSSID
@@ -206,6 +206,8 @@ My_Config_Initialise(void)
 void
 Wifi_Initialise( void )
 {
+  u32 std_init_timestamp_ms = 0;
+
   /* Set wifi mode to support both AP and STA */
   WiFi.mode(WIFI_AP_STA);
 
@@ -224,18 +226,36 @@ Wifi_Initialise( void )
 
   /* Init the wifi STA function */
   WiFi.begin( My_Config.sta_ssid , My_Config.sta_pwd );
+  std_init_timestamp_ms = millis();
 
   /* Wait for connection */
   while (WiFi.status() != WL_CONNECTED)
   {
-    delay(500);
+    /* Wait connect for at most 10 seconds */
+    if ( (millis() - std_init_timestamp_ms ) > 10000 )
+    {
+      break;
+    }
+
+    digitalWrite(GPIO_LED_BLUE, !digitalRead(GPIO_LED_BLUE));
+
+    delay(300);
     Serial.print(".");
   }
 
   Serial.println("");
 
-  LOG( DBG_A, "Connected to: %s\n", My_Config.sta_ssid );
-  LOG( DBG_A, "IP address: %s\n", WiFi.localIP().toString().c_str() );
+  if ( WiFi.status() != WL_CONNECTED )
+  {
+    LOG( DBG_A, "Connect failed, bad SSID %s!\n", My_Config.sta_ssid );
+    digitalWrite(GPIO_LED_RED, HIGH);
+  }
+  else
+  {
+    LOG( DBG_A, "Connected to: %s\n", My_Config.sta_ssid );
+    LOG( DBG_A, "IP address: %s\n", WiFi.localIP().toString().c_str() );
+    digitalWrite(GPIO_LED_RED, LOW);
+  }
 
   LOG( DBG_P, "Wifi Initialise Complete.\n" );
 }
