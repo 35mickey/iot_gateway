@@ -167,6 +167,12 @@ Wifi_Initialise( void );
 extern void
 GPIO_Initialise( void );
 
+extern void
+SR04_Initialise( void );
+
+extern FLOAT
+SR04_Get_Distance( void );
+
 #endif  /* __ESP8266_GLOBAL_H__ */
 
 /*===========================================================================*/

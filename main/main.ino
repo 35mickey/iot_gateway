@@ -1,3 +1,5 @@
+#include <EspMQTTClient.h>
+
 /*=============================================================================
 Copyright Mickey
 =============================================================================*/
@@ -34,7 +36,8 @@ Static Variables
 Global Variables
 =============================================================================*/
 
-u32 led_flash_timestamp_ms = 0;
+u32 led_flash_timestamp_ms    = 0;
+u32 sonar_update_timestamp_ms = 0;
 
 /*=============================================================================
 Static Prototypes
@@ -76,19 +79,30 @@ void setup()
   /* Init the HTTP server */
   http_server_init();
 
+  /* Init sonar HC-SR04 */
+  SR04_Initialise();
+
   /*---------------------------------------------------------------------------*/
 
 }
 
 /*===========================================================================*/
 
-void loop() {
-
+void loop()
+{
+  /* Flash LED */
   if ( (millis() - led_flash_timestamp_ms ) > 1000 )
   {
     led_flash_timestamp_ms = millis();
     int led_state = digitalRead(GPIO_LED_BLUE);
     digitalWrite(GPIO_LED_BLUE, !led_state);
+  }
+
+  /* Update sonar */
+  if ( (millis() - sonar_update_timestamp_ms ) > 1000 )
+  {
+    sonar_update_timestamp_ms = millis();
+    SR04_Get_Distance();
   }
 
   http_handle_client();

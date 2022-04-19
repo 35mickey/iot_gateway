@@ -265,18 +265,68 @@ Wifi_Initialise( void )
 void
 GPIO_Initialise( void )
 {
-  pinMode(GPIO_LED_GREEN,  OUTPUT);
+  pinMode(GPIO_LED_GREEN, OUTPUT);
   pinMode(GPIO_LED_BLUE,  OUTPUT);
-  pinMode(GPIO_LED_RED,  OUTPUT);
+  pinMode(GPIO_LED_RED,   OUTPUT);
   pinMode(GPIO_RELAY,     OUTPUT);
-  pinMode(GPIO_ECHO,      OUTPUT);
-
-  pinMode(GPIO_ECHO,      INPUT);
 
   /* Disable all GPIOs */
-  digitalWrite(GPIO_LED_GREEN,   LOW);
+  digitalWrite(GPIO_LED_GREEN,  LOW);
   digitalWrite(GPIO_LED_BLUE,   LOW);
-  digitalWrite(GPIO_LED_RED,   LOW);
+  digitalWrite(GPIO_LED_RED,    LOW);
   digitalWrite(GPIO_RELAY,      LOW);
-  digitalWrite(GPIO_ECHO,       LOW);
 }
+
+/*============================================================================*/
+
+/* Init GPIOs about SR04 sonar */
+void
+SR04_Initialise( void )
+{
+  /* TODO: Need to change frequency? */
+
+  pinMode(GPIO_ECHO,      INPUT);
+  pinMode(GPIO_TRIG,      OUTPUT);
+}
+
+/*============================================================================*/
+
+/* Report the distance in cm,
+   if return 0, means the distance is not valid */
+FLOAT
+SR04_Get_Distance( void )
+{
+  FLOAT   Duration_us, Distace_cm;
+  UINT32  Operation_Start_Timestamp_ms;
+
+  Operation_Start_Timestamp_ms = millis();
+
+  /*  The sensor is triggered by a HIGH pulse of 10 or more microseconds.
+      Give a short LOW pulse beforehand to ensure a clean HIGH pulse: */
+  digitalWrite(GPIO_TRIG, LOW);
+  delayMicroseconds(5);
+  digitalWrite(GPIO_TRIG, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(GPIO_TRIG, LOW);
+
+  /*  Read the signal from the sensor: a HIGH pulse whose
+      duration is the time (in microseconds) from the sending
+      of the ping to the reception of its echo off of an object.
+      Default timeout is 100000 microseconds */
+  Duration_us = pulseIn(GPIO_ECHO, HIGH, 100000);
+
+  /* convert the time into a distance */
+  Distace_cm = (Duration_us * 170) / 10000;
+
+  if ( Distace_cm < 2 || Distace_cm > 430 )
+  {
+    Distace_cm = 0;
+  }
+
+  LOG( DBG_N, "Distance : %.2f cm, Cost %d ms\n",
+              Distace_cm,
+              (millis()-Operation_Start_Timestamp_ms) );
+
+  return Distace_cm;
+}
+
