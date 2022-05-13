@@ -1,4 +1,3 @@
-#include <EspMQTTClient.h>
 
 /*=============================================================================
 Copyright Mickey
@@ -22,6 +21,7 @@ Local Includes
 =============================================================================*/
 
 #include "http_server.h"
+#include "mqtt_client.h"
 #include "esp8266_global.h"
 
 /*=============================================================================
@@ -36,8 +36,14 @@ Static Variables
 Global Variables
 =============================================================================*/
 
-u32 led_flash_timestamp_ms    = 0;
-u32 sonar_update_timestamp_ms = 0;
+/* All update timestamps */
+u32 last_led_flash_timestamp_ms       = 0;
+u32 last_measure_sonar_timestamp_ms   = 0;
+u32 last_average_sonar_timestamp_ms   = 0;
+u32 last_time_str_update_timestamp_ms = 0;
+u32 last_sync_ntp_timestamp_ms        = 0;
+u32 last_mqtt_report_timestamp_ms     = 0;
+u32 last_mqtt_connect_timestamp_ms    = 0;
 
 /*=============================================================================
 Static Prototypes
@@ -79,6 +85,9 @@ void setup()
   /* Init the HTTP server */
   http_server_init();
 
+  /* Init the MQTT client */
+  mqtt_client_init();
+
   /* Init sonar HC-SR04 */
   SR04_Initialise();
 
@@ -91,19 +100,23 @@ void setup()
 void loop()
 {
   /* Flash LED */
-  if ( (millis() - led_flash_timestamp_ms ) > 1000 )
+  if ( (millis() - last_led_flash_timestamp_ms ) > 1000 )
   {
-    led_flash_timestamp_ms = millis();
+    last_led_flash_timestamp_ms = millis();
     int led_state = digitalRead(GPIO_LED_BLUE);
     digitalWrite(GPIO_LED_BLUE, !led_state);
+
+    mqtt_publish("original_distance","535");
   }
 
-  /* Update sonar */
-  if ( (millis() - sonar_update_timestamp_ms ) > 1000 )
-  {
-    sonar_update_timestamp_ms = millis();
-    SR04_Get_Distance();
-  }
+//  /* Update sonar */
+//  if ( (millis() - last_measure_sonar_timestamp_ms ) > 1000 )
+//  {
+//    last_measure_sonar_timestamp_ms = millis();
+//    My_Status.raw_distance_cm = SR04_Get_Distance();
+//  }
 
   http_handle_client();
+
+  mqtt_handle_client();
 }

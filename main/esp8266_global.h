@@ -64,6 +64,17 @@ typedef bool                    BOOL;
 /* Relay timing record */
 typedef struct
 {
+  /* Format of this record */
+  UINT16  format_version;
+
+  /* If this timing is valid */
+  BOOL    valid;
+
+  /* Hours 0-23 */
+  UINT8   hh;
+
+  /* Minutes 0-59 */
+  UINT8   mm;
 
 } RELAY_TIMING_RECORD;
 
@@ -87,7 +98,17 @@ typedef struct
   /* Relay timing control config */
   BOOL    relay_auto;
 
-  /* Distance config */
+  /* Relay on timing */
+  RELAY_TIMING_RECORD relay_on_timing;
+
+  /* Relay off timing */
+  RELAY_TIMING_RECORD relay_off_timing;
+
+  /* When distance is high than this value(water level is low), turn off relay */
+  FLOAT   high_distance_cm;
+
+  /* When distance is low than this value(water level is high), turn on relay */
+  FLOAT   low_distance_cm;
 
 } MY_CONFIG_RECORD;
 
