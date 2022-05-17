@@ -114,14 +114,19 @@ typedef struct
 
 /*--------------------------------------------------------------------------*/
 
+#define LOCALTIME_STR_MAX_SIZE  20
+
 /* My status record */
 typedef struct
 {
   /* Format of this record */
   UINT16  format_version;
 
-  /* UTC timestamps milliseconds, get from Internet */
-  UINT32  utc_timestamp_ms;
+  /* UTC+8 timestamps seconds, get from Internet */
+  UINT32  local_timestamp_s;
+
+  /* Local time(UTC+8) string, format 'YYYY-MM-DD hh:mm:ss' */
+  CHAR    local_time_str[LOCALTIME_STR_MAX_SIZE];
 
   /*--------------------------------------------------------------------------*/
 

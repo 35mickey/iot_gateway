@@ -161,6 +161,7 @@ void handle_index()
 
   /* Add the status into html body */
   response_msg += HTML_INDEX;
+  response_msg.replace("{{ localtime_str }}", My_Status.local_time_str);
   response_msg.replace("{{ wifi_status }}",   Wifi_Stutus_String[My_Status.current_wifi_status]);
   response_msg.replace("{{ current_ssid }}",  My_Status.current_sta_ssid);
   response_msg.replace("{{ current_ip }}",    My_Status.current_sta_ip);
