@@ -59,6 +59,9 @@ typedef float                   FLOAT;
 typedef double                  DOUBLE;
 typedef bool                    BOOL;
 
+#define CIRCULAR_INC( Var, Size ) ((Var)==((Size)-1)) ? 0 : ((Var)+1)
+#define CIRCULAR_DEC( Var, Size ) ((Var)==0) ? ((Size)-1)) : ((Var)-1)
+
 /*--------------------------------------------------------------------------*/
 
 /* Relay timing record */
@@ -71,10 +74,10 @@ typedef struct
   BOOL    valid;
 
   /* Hours 0-23 */
-  UINT8   hh;
+  UINT32  hh;
 
   /* Minutes 0-59 */
-  UINT8   mm;
+  UINT32  mm;
 
 } RELAY_TIMING_RECORD;
 
@@ -164,6 +167,9 @@ typedef struct
 
   /* Raw distance */
   FLOAT   raw_distance_cm;
+
+  /* Average distance */
+  FLOAT   avg_distance_cm;
 
 } MY_STATUS_RECORD;
 
