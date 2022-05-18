@@ -47,7 +47,7 @@ Global Variables
 
 /* The interval time in LED flashing
    Differnt interval for different states */
-u32 led_flash_interval_ms             = 1000;
+u32 led_flash_interval_ms             = 500;
 
 /* All update timestamps */
 u32 last_led_flash_timestamp_ms       = 0;
@@ -129,7 +129,7 @@ void setup()
 
   /*---------------------------------------------------------------------------*/
 
-  delay(300);
+  delay(3000);
 
   /* Start NTP client and do update once, delay sometime after Wifi initlised */
   Setup_DateTime();
@@ -145,6 +145,7 @@ void setup()
 void loop()
 {
   UINT32  Count;
+  BOOL    Ret = TRUE;
 
   UINT32        Current_Hour;
   UINT32        Current_Minute;
@@ -153,7 +154,8 @@ void loop()
   UINT32        Timing_Off_Minutes;
   DateTimeParts Current_Parts = DateTime.getParts();
 
-  /* Every 1 sec, flash LED */
+  /* Every 1 sec, flash LED and check wifi state
+     If Wifi is disconnected, flash quickly */
   if ( (millis() - last_led_flash_timestamp_ms ) > led_flash_interval_ms )
   {
     last_led_flash_timestamp_ms = millis();
@@ -169,68 +171,87 @@ void loop()
     last_mqtt_report_timestamp_ms = millis();
 
     /* Alive status */
-    mqtt_publish("alive_status", "on");
+    Ret &= mqtt_publish("alive_status", "on");
 
     /* Relay status */
-    mqtt_publish("relay_status", My_Status.relay_status?"on":"off");
+    Ret &= mqtt_publish("relay_status", My_Status.relay_status?"on":"off");
 
     /* Relay auto config */
-    mqtt_publish("auto_control_relay", My_Config.relay_auto?"true":"false");
+    Ret &= mqtt_publish("auto_control_relay", My_Config.relay_auto?"true":"false");
 
     /* Publish timing config or sonar distance according to relay_auto config */
     if ( My_Config.relay_auto == TRUE )
     {
       /* Sonar raw and average distance */
-      mqtt_publish("raw_distance", String(My_Status.raw_distance_cm, 2) );
-      mqtt_publish("avg_distance", String(My_Status.avg_distance_cm, 2) );
+      Ret &= mqtt_publish("raw_distance", String(My_Status.raw_distance_cm, 2) );
+      Ret &= mqtt_publish("avg_distance", String(My_Status.avg_distance_cm, 2) );
     }
     else
     {
-      mqtt_publish("relay_timing_on_enable", My_Config.relay_on_timing.valid?"true":"false");
-      mqtt_publish("relay_timing_on_time", String( (My_Config.relay_on_timing.hh +
+      Ret &= mqtt_publish("relay_timing_on_enable", My_Config.relay_on_timing.valid?"true":"false");
+      Ret &= mqtt_publish("relay_timing_on_time", String( (My_Config.relay_on_timing.hh +
                                                      (FLOAT)My_Config.relay_on_timing.mm/60), 1));
 
-      mqtt_publish("relay_timing_off_enable", My_Config.relay_off_timing.valid?"true":"false");
-      mqtt_publish("relay_timing_off_time", String( (My_Config.relay_off_timing.hh +
+      Ret &= mqtt_publish("relay_timing_off_enable", My_Config.relay_off_timing.valid?"true":"false");
+      Ret &= mqtt_publish("relay_timing_off_time", String( (My_Config.relay_off_timing.hh +
                                                       (FLOAT)My_Config.relay_off_timing.mm/60), 1));
     }
 
-    LOG( DBG_N, "MQTT: Publish complete.\n" );
+    LOG( DBG_N, "MQTT: Publish %s every 5 sec.\n", Ret?"success":"failed" );
+
+    /* Publish failed then flash quickly */
+    if ( Ret == TRUE )
+    {
+      led_flash_interval_ms = 500;
+    }
+    else
+    {
+      led_flash_interval_ms = 200;
+    }
+
   }
 
   /*---------------------------------------------------------------------------*/
 
-#if 0
-  /* Every 10 mins, update NTP time */
-  if ( (millis() - last_sync_ntp_timestamp_ms ) > (1000*60*10) )
+  /* Every 30 mins, update NTP time */
+  if ( (millis() - last_sync_ntp_timestamp_ms ) > (1000*60*30) )
   {
     last_sync_ntp_timestamp_ms = millis();
-    NTP_Client.update();
+    if( DateTime.begin(500) == false )
+    {
+      LOG( DBG_E, "NTP: Sync NTP failed.\n");
+    }
+    else
+    {
+      LOG( DBG_N, "NTP: Sync NTP success.\n");
+    }
   }
-#endif
 
   /*---------------------------------------------------------------------------*/
 
-  /* Every 1 sec, transform the timestamp to string */
-  if ( (millis() - last_time_str_update_timestamp_ms ) > (1000) )
+  /* Every 10 secs, transform the timestamp to string */
+  if ( (millis() - last_time_str_update_timestamp_ms ) > (1000*10) )
   {
     last_time_str_update_timestamp_ms = millis();
     if ( !DateTime.isTimeValid() )
     {
-      LOG( DBG_E, "Failed to get time from server, retry.\n");
-      DateTime.begin(3*1000);
+      LOG( DBG_E, "NTP: Failed to get time from server, retry.\n");
+      if( DateTime.begin(500) == false )
+      {
+        LOG( DBG_E, "NTP: Sync NTP failed.\n");
+      }
     }
     else
     {
       My_Status.local_timestamp_s = DateTime.now();
       sprintf( My_Status.local_time_str, "%s", DateTime.toString().c_str() );
-//      LOG( DBG_N, "DateTime: %s\n", My_Status.local_time_str );
+      LOG( DBG_I, "NTP: DateTime: %s\n", My_Status.local_time_str );
     }
   }
 
   /*---------------------------------------------------------------------------*/
 
-#if 0
+#if 1
   /* Every 1 sec, update sonar distance and average the sonar distance */
   if ( (millis() - last_measure_sonar_timestamp_ms ) > 1000 )
   {
@@ -238,18 +259,21 @@ void loop()
     My_Status.raw_distance_cm = SR04_Get_Distance();
     My_Status.distance_valid  = (My_Status.raw_distance_cm==0)?FALSE:TRUE;
 
-    /* Update history records */
-    Sonar_Distance_History[Sonar_Distance_History_Index] = My_Status.raw_distance_cm;
-    Sonar_Distance_History_Index = CIRCULAR_INC( Sonar_Distance_History_Index, DISTANCE_WINDOW_LPF_WIDTH);
-
-    /* Do average */
-    My_Status.avg_distance_cm = 0;
-    for (Count = 0; Count < DISTANCE_WINDOW_LPF_WIDTH; ++Count)
+    /* Update average distance */
+    if ( My_Status.distance_valid == TRUE )
     {
-      My_Status.avg_distance_cm += Sonar_Distance_History[Count];
-    }
-    My_Status.avg_distance_cm = My_Status.avg_distance_cm/DISTANCE_WINDOW_LPF_WIDTH;
+      /* Update history records */
+      Sonar_Distance_History[Sonar_Distance_History_Index] = My_Status.raw_distance_cm;
+      Sonar_Distance_History_Index = CIRCULAR_INC( Sonar_Distance_History_Index, DISTANCE_WINDOW_LPF_WIDTH);
 
+      /* Do average */
+      My_Status.avg_distance_cm = 0;
+      for (Count = 0; Count < DISTANCE_WINDOW_LPF_WIDTH; ++Count)
+      {
+        My_Status.avg_distance_cm += Sonar_Distance_History[Count];
+      }
+      My_Status.avg_distance_cm = My_Status.avg_distance_cm/DISTANCE_WINDOW_LPF_WIDTH;
+    }
   }
 #endif
 
@@ -346,12 +370,12 @@ void loop()
   if ( My_Status.relay_status == TRUE )
   {
     digitalWrite(GPIO_RELAY,    HIGH);
-    digitalWrite(GPIO_LED_RED,  HIGH);
+//    digitalWrite(GPIO_LED_RED,  HIGH);
   }
   else
   {
     digitalWrite(GPIO_RELAY,    LOW);
-    digitalWrite(GPIO_LED_RED,  LOW);
+//    digitalWrite(GPIO_LED_RED,  LOW);
   }
 
   /*---------------------------------------------------------------------------*/

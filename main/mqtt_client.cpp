@@ -126,7 +126,7 @@ bool mqtt_publish(const String &topic, const String &payload)
 
   ret = mqtt_client.publish( topic.c_str(), payload.c_str() );
 
-  LOG( DBG_N, "MQTT: Pub, topic(%s), message(%s)\n", topic.c_str(), payload.c_str() );
+  LOG( DBG_I, "MQTT: Pub, topic(%s), message(%s)\n", topic.c_str(), payload.c_str() );
 
   return ret;
 }
@@ -197,8 +197,8 @@ void mqtt_subscribe_callback(const String &topicStr, const String &message)
     /* 24 hours */
     if( (Time_hour >= 0) && (Time_hour < 24) )
     {
-      Config.relay_on_timing.hh = (UINT8)Time_hour;
-      Config.relay_on_timing.mm = (UINT8)((Time_hour - (FLOAT)Config.relay_on_timing.hh)*60);
+      Config.relay_on_timing.hh = (UINT32)Time_hour;
+      Config.relay_on_timing.mm = (UINT32)((Time_hour - (FLOAT)Config.relay_on_timing.hh)*60);
     }
   }
 
@@ -224,8 +224,8 @@ void mqtt_subscribe_callback(const String &topicStr, const String &message)
     /* 24 hours */
     if( (Time_hour >= 0) && (Time_hour < 24) )
     {
-      Config.relay_off_timing.hh = (UINT8)Time_hour;
-      Config.relay_off_timing.mm = (UINT8)((Time_hour - (FLOAT)Config.relay_off_timing.hh)*60);
+      Config.relay_off_timing.hh = (UINT32)Time_hour;
+      Config.relay_off_timing.mm = (UINT32)((Time_hour - (FLOAT)Config.relay_off_timing.hh)*60);
     }
   }
 

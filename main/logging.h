@@ -51,6 +51,9 @@ DBG_3 - debug 3 - voluminous debug info, as much as required
 #define DBG_2 8    /* debug 2 */
 #define DBG_3 9    /* debug 3 */
 
+/* Don't log if message has lower priority than this level */
+#define LOG_LEVEL  DBG_N
+
 /* Number of log ID's */
 /* Each module will store a copy of the log levels for all the log ID's used in the product (including those of other processes) */
 #define LOG_ID_INVALID    0

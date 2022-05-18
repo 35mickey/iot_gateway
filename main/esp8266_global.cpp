@@ -324,7 +324,7 @@ SR04_Get_Distance( void )
     Distace_cm = 0;
   }
 
-  LOG( DBG_N, "Distance : %.2f cm, Cost %d ms\n",
+  LOG( DBG_N, "Sonar: Distance %.2f cm, Cost %d ms\n",
               Distace_cm,
               (millis()-Operation_Start_Timestamp_ms) );
 

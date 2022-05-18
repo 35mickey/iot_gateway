@@ -133,6 +133,13 @@ LOG_ID_Handle(  unsigned int  Log_ID,
     Log_Level = DBG_3;
   }
 
+  /* Don't log if message has lower priority than current debug level
+     (higher priority log level is lower numeric value) */
+  if ( Log_Level > LOG_LEVEL )
+  {
+    return;
+  }
+
   /* Ensure input pointer valid */
   if ( !pFormatString )
   {
